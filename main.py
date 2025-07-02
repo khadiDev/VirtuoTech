@@ -27,18 +27,29 @@ def pointage(uid: str, email: str, timestamp: datetime = None):
     db.commit()
 
     heure = timestamp.time()
-    if time(9, 0) <= heure <= time(12, 0):
-        student = get_student_by_email(email)
-        student_id = student["result"].get("id")
-    elif heure >= time(17, 30):
-        student  = get_student_by_email(email)
-        student_id = student["result"].get("id")
-
+    print (heure)
+    if time(9, 30) <= heure <= time(10, 0):
+        print (heure)
+        student_id = get_student_id_by_email(email)
+        # student_id = student["result"].get("id")
+        courses = get_all_courses()
+        # if student_id is not None:
+        present = is_student_in_courses(student_id, courses)
+    elif time(17, 30) <= heure <= time(18, 30):
+        student_id  = get_student_id_by_email(email)
+        # student_id = student["result"].get("id")
+        courses = get_all_courses()
+        # if student_id is not None:
+        present = is_student_in_courses(student_id, courses)
+        # else :
+        #     print ("okkk")
+    else :
+        return("Pas à l'heure")
     # Pauses longues
-    if time(11, 45) < heure < time(15, 30):
-        dernier = db.query(Passage).filter_by(uid=uid).order_by(Passage.horodatage.desc()).first()
-        if dernier and (timestamp - dernier.horodatage > timedelta(minutes=15)):
-            db.add(Alerte(uid=uid, message="Pause prolongée > 15 min"))
-            db.commit()
+    # if time(11, 45) < heure < time(15, 30):
+    #     dernier = db.query(Passage).filter_by(uid=uid).order_by(Passage.horodatage.desc()).first()
+    #     if dernier and (timestamp - dernier.horodatage > timedelta(minutes=15)):
+    #         db.add(Alerte(uid=uid, message="Pause prolongée > 15 min"))
+    #         db.commit()
 
-    return student_id
+    return present
