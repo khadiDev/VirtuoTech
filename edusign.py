@@ -31,20 +31,19 @@ def get_student_by_email(email):
         print("Erreur récupération étudiants :", response.text)
         return None
 
-    students = response.json().get("result", [])
-    for student in students:
-        if student.get("EMAIL", "").lower() == email.lower():
-            return student
-    return None
+    if response.status_code == 200:
+        return response.json()  
+    else:
+        return None
 
 
-# def get_all_courses():
-#     url = f"{API_BASE}/course"
-#     response = requests.get(url, headers=HEADERS)
-#     if response.status_code != 200:
-#         print("Erreur récupération cours :", response.text)
-#         return []
-#     return response.json().get("result", [])
+def get_all_courses():
+    url = f"{API_BASE}/course"
+    response = requests.get(url, headers=HEADERS)
+    if response.status_code != 200:
+        print("Erreur récupération cours :", response.text)
+        return []
+    return response.json().get("result", [])
 
 
 # def is_student_scheduled_now(email):

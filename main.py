@@ -28,9 +28,11 @@ def pointage(uid: str, email: str, timestamp: datetime = None):
 
     heure = timestamp.time()
     if time(9, 0) <= heure <= time(12, 0):
-        get_student_by_email(email)
+        student = get_student_by_email(email)
+        student_id = student["result"].get("id")
     elif heure >= time(17, 30):
-        get_student_by_email(email)
+        student  = get_student_by_email(email)
+        student_id = student["result"].get("id")
 
     # Pauses longues
     if time(11, 45) < heure < time(15, 30):
@@ -39,4 +41,4 @@ def pointage(uid: str, email: str, timestamp: datetime = None):
             db.add(Alerte(uid=uid, message="Pause prolongée > 15 min"))
             db.commit()
 
-    return {"status": "ok", "uid": uid}
+    return student_id
