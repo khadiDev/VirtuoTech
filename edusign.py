@@ -45,6 +45,31 @@ def get_all_courses():
         return []
     return response.json().get("result", [])
 
+def send_presence(student_id, moment: str):
+    """
+    Envoie une signature de présence à Edusign pour l'étudiant donné.
+
+    Args:
+        student_id (str): ID de l'étudiant dans Edusign.
+        moment (str): "matin" ou "soir"
+
+    Returns:
+        int: code HTTP (200 = OK)
+    """
+    url = f"{API_BASE}/student/{student_id}/sign"
+    payload = {
+        "moment": moment
+    }
+    response = requests.post(url, headers=HEADERS, json=payload)
+    
+    if response.status_code == 200:
+        print(f"✅ Présence envoyée ({moment}) pour étudiant {student_id}")
+    else:
+        print(f"❌ Erreur lors de l'envoi ({moment}) pour {student_id} → {response.status_code} : {response.text}")
+    
+    return response.status_code
+
+
 
 # def is_student_scheduled_now(email):
 #     student = get_student_by_email(email)
