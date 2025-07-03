@@ -76,77 +76,82 @@ def pointage(uid: str, email: str, timestamp: datetime = None):
         "timestamp": timestamp
     }
 
-
-
+from edusign import get_all_students
 
 @app.get("/utilisateurs")
-def get_utilisateurs():
-    db = SessionLocal()
-    users = db.query(Utilisateur).all()
+def get_utilisateurs_from_edusign():
+    students = get_all_students()
     result = []
-    for user in users:
+
+    for s in students:
         result.append({
-            "id": user.id,
-            "nom": user.nom,
-            "email": user.email,
-            "type": user.type,
-            "uid_carte": user.uid_carte,
-            "expiration_carte": user.expiration_carte
+            "id": s.get("ID") or s.get("id"),
+            "prenom": s.get("FIRSTNAME", ""),
+            "nom": s.get("LASTNAME", ""),
+            "email": s.get("EMAIL", ""),
+            "formation": s.get("TRAINING_NAME", ""),
+            "telephone": s.get("PHONE", ""),
+            "entreprise": s.get("COMPANY", ""),
+            "badge_id": s.get("BADGE_ID", ""),
+            "photo": s.get("PHOTO", ""),
         })
+
     return result
 
-@app.post("/utilisateurs")
-def create_utilisateur(nom: str, email: str, type: str, uid_carte: str, expiration_carte: datetime = None):
-    db = SessionLocal()
-    if db.query(Utilisateur).filter_by(uid_carte=uid_carte).first():
-        raise HTTPException(status_code=400, detail="UID déjà existant")
-    user = Utilisateur(
-        nom=nom,
-        email=email,
-        type=type,
-        uid_carte=uid_carte,
-        expiration_carte=expiration_carte
-    )
-    db.add(user)
-    db.commit()
-    return {"message": "Utilisateur ajouté"}
+from edusign import get_student_id_by_email
+import requests
 
-@app.put("/utilisateurs/{uid}")
-def update_utilisateur(uid: str, nom: str = None, email: str = None, type: str = None, expiration_carte: datetime = None):
-    db = SessionLocal()
-    user = db.query(Utilisateur).filter_by(uid_carte=uid).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+@app.get("/utilisateurs/by-email")
+def get_utilisateur_by_email(email: str):
+    url = f"https://ext.edusign.fr/v1/student/by-email/{email}"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer f538f33b14ce5958adb324cc0dcf5b439b6689c3a50f99b0611553e8cb5e7ee0"
+    }
 
-    if nom: user.nom = nom
-    if email: user.email = email
-    if type: user.type = type
-    if expiration_carte: user.expiration_carte = expiration_carte
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        raise HTTPException(status_code=404, detail="Étudiant introuvable dans Edusign")
 
-    db.commit()
-    return {"message": "Utilisateur mis à jour"}
+    data = response.json().get("result", {})
 
-@app.delete("/utilisateurs/{uid}")
-def delete_utilisateur(uid: str):
-    db = SessionLocal()
-    user = db.query(Utilisateur).filter_by(uid_carte=uid).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-    db.delete(user)
-    db.commit()
-    return {"message": "Utilisateur supprimé"}
+    return {
+        "id": data.get("ID") or data.get("id"),
+        "prenom": data.get("FIRSTNAME", ""),
+        "nom": data.get("LASTNAME", ""),
+        "email": data.get("EMAIL", ""),
+        "formation": data.get("TRAINING_NAME", ""),
+        "telephone": data.get("PHONE", ""),
+        "entreprise": data.get("COMPANY", ""),
+        "badge_id": data.get("BADGE_ID", ""),
+        "photo": data.get("PHOTO", "")
+    }
+
+from edusign import get_all_students
 
 @app.get("/alertes")
 def get_alertes():
     db = SessionLocal()
     alertes = db.query(Alerte).order_by(Alerte.timestamp.desc()).all()
+
+    # Récupérer tous les étudiants depuis Edusign une seule fois
+    students = get_all_students()
+    student_lookup = {s.get("BADGE_ID"): s for s in students}
+
     result = []
     for alerte in alertes:
+        edusign_info = student_lookup.get(alerte.uid, {})
+
         result.append({
             "id": alerte.id,
             "uid": alerte.uid,
             "message": alerte.message,
-            "timestamp": alerte.timestamp
+            "timestamp": alerte.timestamp,
+            "prenom": edusign_info.get("FIRSTNAME", ""),
+            "nom": edusign_info.get("LASTNAME", ""),
+            "email": edusign_info.get("EMAIL", ""),
+            "photo": edusign_info.get("PHOTO", "")
         })
-    return result
 
+    return result
+from fastapi import Body
