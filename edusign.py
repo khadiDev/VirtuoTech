@@ -9,6 +9,17 @@ HEADERS = {
 }
 
 
+def get_all_students():
+    url = f"{API_BASE}/student"
+    response = requests.get(url, headers=HEADERS)
+
+    if response.status_code != 200:
+        print("Erreur récupération des étudiants :", response.text)
+        return []
+
+    return response.json().get("result", [])
+    
+
 def get_student_id_by_email(email):
     url = f"{API_BASE}/student/by-email/{email}"
     response = requests.get(url, headers=HEADERS)
