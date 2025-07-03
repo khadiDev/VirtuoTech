@@ -44,7 +44,11 @@ def pointage(uid: str, email: str, timestamp: datetime = None):
         # else :
         #     print ("okkk")
     else :
-        return("Pas à l'heure")
+        student_id  = get_student_id_by_email(email)
+        # student_id = student["result"].get("id")
+        courses = get_all_courses()
+        # return("Pas à l'heure")
+        delay = alertes_delay(student_id, courses)
     # Pauses longues
     # if time(11, 45) < heure < time(15, 30):
     #     dernier = db.query(Passage).filter_by(uid=uid).order_by(Passage.horodatage.desc()).first()
@@ -52,4 +56,5 @@ def pointage(uid: str, email: str, timestamp: datetime = None):
     #         db.add(Alerte(uid=uid, message="Pause prolongée > 15 min"))
     #         db.commit()
 
-    return present
+    # return present
+    return delay

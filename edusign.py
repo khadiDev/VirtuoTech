@@ -50,4 +50,18 @@ def is_student_in_courses(student_id, courses):
                     return f"Erreur lors de l'envoi de la signature : {response.text}"
     return (f"Étudiant {student_id} n'est pas inscrit au cours : {course.get('NAME', 'Nom inconnu')}")
 
- 
+def alertes_delay(student_id, courses):
+    for course in courses.get("result", []):
+        students = course.get("STUDENTS", [])
+        for s in students:
+            if s.get("studentId") == student_id:
+                course_id = s.get("courseId")
+                # send delay
+                url = f"{API_BASE}/presential-states/set-delay/{course_id}/{student_id}"
+                payload = {
+                    "courseID": course_id,  
+                    "studentId": [student_id],
+                    "delay": 18
+                } 
+                response = requests.patch(url, headers=HEADERS, json=payload)  
+    return "en retard"            
